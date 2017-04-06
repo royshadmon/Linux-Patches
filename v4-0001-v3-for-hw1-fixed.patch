@@ -1,0 +1,66 @@
+From 0c51f1438c41cc8bb8fefd3853b23f97f4a60837 Mon Sep 17 00:00:00 2001
+From: Roy Shadmon <rshadmon@ucsc.edu>
+Date: Wed, 22 Feb 2017 10:44:40 -0800
+Subject: [PATCH v4] DOCUMENTATION: Update patch for a broken link
+
+changelog:
+2/2/17 - Roy Shadmon
+    My motivation to fix this specific broken link was because this
+    papers seems fairly important because it covers the TCP
+    congestion control algorithm.
+
+    The best approach to fix this problem, is by going on google
+    scholar and searching for another PDF copy of this paper.
+    This approach is best, because Google Scholar is pretty good
+    about maintaining all published papers and making sure
+    they're accessible to everyone all the time. I removed the
+    dead URL link and replaced it with the working URL link.
+
+developer_tags:
+
+Signed-off-by: Roy Shadmon <rshadmon@ucsc.edu>
+
+---
+
+FAKECC:
+Jonathan Corbet <corbet@lwn.net> (maintainer:DOCUMENTATION)
+linux-doc@vger.kernel.org (open list:DOCUMENTATION)
+linux-kernel@vger.kernel.org (open list)
+
+patch_history:
+    v4:
+      Reorganizing the patch to get a getter score. Moved FAKECC below ---
+      and added v4 in patch history. Also got rid of the orginiation info
+      as said in grade review. 
+    v3:
+      Fixing my patch submission to increase my score. What was wrong in v2
+      was that my patch for some reason contained '+' symbol at every line.
+      In v3, I removed all unnecessary '+' symbols, as well as updating the
+      version number and adding a v3 patch_history. 		
+    v2:
+      Fixing my patch submission so it can be approved, such as adding a
+      FAKECC and reorganizing the the patch submission. Ran the check script
+      and it returned no errors.
+    v1:
+      Fixed the URL in dctcp.txt with a working URL found using google scholar.
+---
+diffstat:
+
+ Documentation/networking/dctcp.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/networking/dctcp.txt b/Documentation/networking/dctcp.txt
+index 13a8577..aec6021 100644
+--- a/Documentation/networking/dctcp.txt
++++ b/Documentation/networking/dctcp.txt
+@@ -27,7 +27,7 @@ SIGCOMM/SIGMETRICS papers:
+     Parveen Patel, Balaji Prabhakar, Sudipta Sengupta, and Murari Sridharan:
+       "Data Center TCP (DCTCP)", Data Center Networks session
+       Proc. ACM SIGCOMM, New Delhi, 2010.
+-    http://simula.stanford.edu/~alizade/Site/DCTCP_files/dctcp-final.pdf
++    http://cs.tju.edu.cn/faculty/zenghua/Network_2013/presentation/TCP/dctcp-sigcomm2010.pdf
+     http://www.sigcomm.org/ccr/papers/2010/October/1851275.1851192
+
+ ii) Mohammad Alizadeh, Adel Javanmard, and Balaji Prabhakar:
+--
+2.7.4
