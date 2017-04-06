@@ -1,0 +1,130 @@
+From 9ac567ffc1d446c3153850d59ade9dcb20e765a1 Mon Sep 17 00:00:00 2001
+From: Roy Shadmon <rshadmon@ucsc.edu>
+Date: Mon, 13 Mar 2017 16:49:43 -0700
+Subject: [PATCH v3] Optimize int_sqrt for small values for faster idle
+
+changelog:
+3/13/17 - Roy Shadmon
+	My motivation to optimize the int_sqrt function was to try to 
+	speed it up for a class project. Unfortunately, my version runs
+	about 1 second slower than the current function. I know this 
+	from testing using the perf branch test given to us by the 
+	instructors. The current speed running that test took about 24.714
+	seconds. My "optimized" version took about 25.061 seconds. It was fun
+	to at least try to optimize this function. 
+	
+	My results are that the current int_sqrt function is slightly more 
+	efficient than my "optimized" sqrt function. Looking at the initial
+	before and after CDF graphs, I see that the before finished about 
+	100ms faster. The before CDF graph is also more left, but equal 
+	in height. When I take a look at the PDF's of before and after, I 
+	notice that the before graph is less spread out and that it also has
+	a significantly higher peak. Also, looking at the combined CDF graph,
+	the before function finishes first, it's more left, and equally peaking.
+	Finally, looking at the combined graphs it is very clear that the 
+	before function is less spread out and has a higher peak than the 
+	function I wrote. I put the photos of the graphs in this google doc 
+	for you to see. 
+	Note: my asciinema is in this google doc as well. 
+
+	goo.gl/RKydEg
+
+developer_tags:
+
+Signed-off-by: Roy Shadmon <rshadmon@ucsc.edu> 
+
+---
+
+FAKECC:
+linux-kernel@vger.kernel.org (open list)
+
+patch_history:
+
+v3:
+	This function is completely updated. This new function takes in an
+	unsigned long, plays around with the bits and prints out a very 
+	accurate sqrt. I referenced StackOverflow since I wasn't familiar
+	with adjusting bits in C. Here's the website I used:
+	http://stackoverflow.com/questions/1100090/looking-for-an-efficient-integer-square-root-algorithm-for-arm-thumb2.
+
+v2:
+        Added an optimized sqrt function. I used this website to write it:
+
+        https://www.quora.com/How-do-I-write-a-program-for-finding-the-
+        square-root-of-a-number-without-using-the-sqrt-function
+
+        (connect the above 2 lines to get to the website). I hope with my
+        second revision to perfect the patch and improve the code, but
+        unfortunately I got stuck for many many hours with small things
+        that I was posting about in the google classroom, and due to
+        being stuck and getting feedback late every day, I didn't have that
+        much time to work on part 2. However, I do feel like I'm learning a
+        lot and my 2nd revision will be much better.
+v1: 
+	By Andi Kleen:
+	I instrumented the function on my workstation and most values are
+	16bit only and most others 32bit (50% percentile is 122094,
+	75% is 3699533).
+
+	sqrt is implemented by starting with an initial estimation,
+	and then iterating. int_sqrt currently only uses a fixed
+	estimating which is good for 64bits worth of input.
+
+	This patch adds some checks at the beginning to start with
+	a better estimate for values fitting in 8, 16bit and 32bit.
+	This makes int_sqrt between 60+% faster for values in 16bit,
+	and still somewhat faster (between 10 and 30%) for larger values
+	upto 32bit. Full 64bit is slightly slower.
+
+diffstat:
+
+ lib/int_sqrt.c | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/lib/int_sqrt.c b/lib/int_sqrt.c
+index 56d5167..bf009bb 100644
+--- a/lib/int_sqrt.c
++++ b/lib/int_sqrt.c
+@@ -14,8 +14,33 @@
+  *
+  * A very rough approximation to the sqrt() function.
+  */
+-//comment
+ 
++unsigned long SquareRootRounded(unsigned long a_nInput)
++{
++	unsigned long op  = a_nInput;
++	unsigned long res = 0;
++	unsigned long one = 1uL << 30;
++
++	while (one > op)
++		one >>= 2;
++
++	while (one != 0) {
++		if (op >= res + one) {
++			op = op - (res + one);
++			res = res +  2 * one;
++		}
++		res >>= 1;
++		one >>= 2;
++	}
++
++    /* Do arithmetic rounding to nearest integer */
++	if (op > res)
++		res++;
++
++	return res;
++}
++EXPORT_SYMBOL(int_sqrt);
++/*
+ unsigned long int_sqrt(unsigned long x)
+ {
+ 	unsigned long b, m, y = 0;
+@@ -38,3 +63,4 @@ unsigned long int_sqrt(unsigned long x)
+ 	return y;
+ }
+ EXPORT_SYMBOL(int_sqrt);
++*/
+-- 
+2.7.4
+
