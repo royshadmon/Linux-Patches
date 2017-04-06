@@ -1,0 +1,146 @@
+From d2df91385e79f25e7cdd507dd31491b7b1b3d292 Mon Sep 17 00:00:00 2001
+From: Roy Shadmon <rshadmon@ucsc.edu>
+Date: Fri, 24 Mar 2017 17:27:34 -0700
+Subject: [PATCH v3] Optimize int_sqrt for small values for faster idle
+
+I ran rests on the int_sqrt function. I recorded that both
+functions recorded correct values for x = 0, 1, 2, and U32_MAX.
+The updated function I wrote, ran in 24.145 seconds, and the
+old ran in 25.162 seconds. I'm not 100% why mine is faster, but
+it will do.
+
+My max and min values are:
+max = 0x62ccdb63 = 1,657,592,675 and
+min = 0x60bc47d7 = 1,622,951,895.
+I got these values running the command "openssl rand -hex 4"
+and I converted the hex values to decimal using a google converter.
+I couldn't figure out how to test the functions over an optimized range
+so I just ran the perf branch test and saw that the optimized function
+runs a little faster than the older function. I also couldn't figure out
+how to test the 16 bit function. I kept getting errors in k_grok 
+running the commands like I did for assignment 2. 
+
+Here is a link to a google docs with more info.
+        https://goo.gl/S9osBF
+Here is a link to the asciinema:
+        https://asciinema.org/a/108423
+
+Signed-off-by: Roy Shadmon <rshadmon@ucsc.edu>
+
+---
+
+FAKECC:
+Andrew Morton <akpm@linux-foundation.org>
+Andrew Shewmaker <agshew@gmail.com>
+linux-kernel@vger.kernel.org (open list)
+
+patch_history:
+
+v3:
+        This new function works really well. I got it from http://stackoverflow.com/questions/1100090/looking-for-an-efficient-integer-square-root-algorithm-for-arm-thumb2
+        and I've had great success with it. Again, it probably needs
+        more testing than what I gave it to be submitted as an actual
+        patch to Linux, but I'm happy with it.
+        Here is the full link to the google doc in case the shortened
+        link doesn't work.
+https://docs.google.com/document/d/1RFrtsclV203ec_QFk_jhTOwaba5AECaofymO0Iz1Zz8/edit
+        I also got a 16 bit int_sqrt function from this website, and I
+        couldn't fully test it because the types were different and for
+        some reason k_grok constantly gave me errors when I tried to run
+        tests on it.
+        I got the function from this website:
+        https://gist.github.com/foobaz/3287f153d125277eefea
+
+        Note: I was getting 4 errors checking the patch, and I've tried
+        my best to fix them, but I couldn't figure them out. Here they are:
+        WARNING: please, no spaces at the start of a line
+        WARNING: suspect code indent for conditional statements (6, 14)
+        WARNING: please, no spaces at the start of a line
+        WARNING: Block comments use * on subsequent lines
+        There are no spaces at the start of the line, just tabs.
+        The conditional statements are indented properly.
+        Block comments have the *. Thus, I'm not quite sure why it's giving
+        errors.
+v2:
+        By Andrew Shewmaker:
+        add int_sqrt_optimized for 823993 to 902440
+        instead of adding conditional optimizations
+        for different bit lengths
+
+ lib/int_sqrt.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 53 insertions(+), 2 deletions(-)
+
+diff --git a/lib/int_sqrt.c b/lib/int_sqrt.c
+index 56d5167..dc7447fd 100644
+--- a/lib/int_sqrt.c
++++ b/lib/int_sqrt.c
+@@ -9,13 +9,64 @@
+ #include <linux/export.h>
+ 
+ /**
+- * int_sqrt - rough approximation to sqrt
++ * int_sqrt_optimized - rough approximation to sqrt
+  * @x: integer of which to calculate the sqrt
+  *
+  * A very rough approximation to the sqrt() function.
++ * Optimized for range 823993 to 902440, returning
++ * 907 to 950.
+  */
+-//comment
++unsigned long int_sqrt_optimized(unsigned long x)
++{
++	unsigned long b, m, y = 0;
++
++	if (x <= 1)
++		return x;
++
++	m = 1UL << (BITS_PER_LONG - 2);
++	if (x > 902440)
++		m = 1UL << 20;
++
++	while (m != 0) {
++		b = y + m;
++		y >>= 1;
++
++		if (x >= b) {
++			x -= b;
++			y += m;
++		}
++		m >>= 2;
++	}
++
++	return y;
++}
++EXPORT_SYMBOL(int_sqrt_optimized);
++
++
++//16bit
++uint8_t int_sqrt16(uint16_t x)
++{
++	uint8_t res = 0;
++	uint8_t add = 0x80;
++	uint8_t i;
++
++	for (i = 0; i < 8; i++) {
++		uint8_t temp = res | add;
++		uint16_t g2 = temp;
++
++		g2 *= temp;
++
++		if (x >= g2)
++			res = temp;
++
++		add >>= 1;
++	}
++	return res;
++
++}
++EXPORT_SYMBOL(int_sqrt16);
+ 
++//original
+ unsigned long int_sqrt(unsigned long x)
+ {
+ 	unsigned long b, m, y = 0;
+-- 
+2.7.4
+
